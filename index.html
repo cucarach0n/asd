@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+	<div class="chat">
+		<input type="text" class="chat-name" placeholder="ingresa tu nombre"><select id="conectados"></select><input type="checkbox" id="privado"/><input type="button" value="conectar" id="btnconectar">
+		<div class="chat-messages" style="overflow:scroll;height:200px;width:200px"></div>
+		<textarea id="mensaje" placeholder="ingresu tu mensaje"></textarea><input type="button" value="enviar" id="btnenviar"/>
+		<div class="chat-status">Status: <span>Ldle</span></div>
+	</div>
+	<script>
+	$(function(){
+		var socket = io.connect();
+		$usuario = $('.chat-name');
+		$messagebox = $('#mensaje');
+		$chatArea = $('.chat-messages');
+		$boton = $('#btnenviar');
+		$botonconectar = $('#btnconectar');
+
+		
+		$botonconectar.click(function(){
+			socket.emit('entrar',$usuario.val());
+		});
+
+		$boton.click(function(){
+			if ($('#privado').is(':checked')) {
+				socket.emit('privado',{mensaje:$messagebox.val(),id:$('#conectados').val(),nombre:$usuario.val()});
+				$chatArea.append($usuario.val() +" - " + $messagebox.val() + "<br/>");
+				$messagebox.val('');
+			}
+			else
+			{
+				socket.emit('send message',{mensaje:$messagebox.val(),nombre:$usuario.val()});
+				$messagebox.val('');
+			}
+			
+		});
+
+
+		socket.on('new message',function(data){
+			$chatArea.append( data.nombre+" - "+data.mensaje+"<br/>");
+			console.log(data.nombre)
+		});
+
+		socket.on('listarcontactos',function(datos){
+			$('#conectados option').remove();
+			for (var i = 0; i < datos.length; i++) {
+				$('#conectados').append("<option value='"+ datos[i].id +"'>"+datos[i].user+"</option>");
+				
+			};
+		});	
+
+		window.onbeforeunload = function () {
+        	socket.emit('desconectar');
+    	};	
+	});
+	</script>
+</body>
+</html>
