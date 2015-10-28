@@ -4,6 +4,7 @@ var express = require("express"),
 	io = require('socket.io').listen(server);
 var conectados =[];
 var nuevoConectado =[];
+var mensajes = [];
 server.listen(3000);
 
 app.get("/",function(require,res){
@@ -14,13 +15,14 @@ io.sockets.on('connection',function(socket){
     //console.log(socket.id);
 	socket.on('send message',function(data)
 	{
+	    mensajes.push({mensaje:data.mensaje,nombre:data.nombre});
 		io.sockets.emit('new message',data);
 		console.log("***"+data.nombre +" escribio: " + data.mensaje);
 	});
 	socket.on('entrar',function(usuario){
 		
 		conectados.push({user:usuario,id:socket.id});
-		
+		io.sockets.connected[socket.id].emit('leermensajes',mensajes);
 		io.sockets.emit('listarcontactos',conectados);
 		console.log("se conecto :" + usuario + " con el id :" + socket.id );
 	});
@@ -36,17 +38,11 @@ io.sockets.on('connection',function(socket){
 		console.log(conectados);
 		conectados = [];
 		conectados = nuevoConectado;
-	/*	for (var i = 0; i < conectados.length; i++) {
-		id = conectados[i].id ;
-		io.sockets.connected[id].emit('listarcontactos',conectados);
-		}*/
 		io.sockets.emit('listarcontactos',conectados);
 		console.log("Se desconecto: " + socket.id);
 		console.log("--Lista Final--");  
 		console.log(conectados);
 	});
-	/*socket.on('disconnect', function () {
-        console.log("client has disconnected :" + socket.id);
-    });*/
 
 });
+

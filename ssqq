@@ -1,0 +1,75 @@
+[1mdiff --git a/index.html b/index.html[m
+[1mindex 31dc009..fa1eb5b 100644[m
+[1m--- a/index.html[m
+[1m+++ b/index.html[m
+[36m@@ -33,7 +33,11 @@[m
+ 		$boton = $('#btnenviar');[m
+ 		$botonconectar = $('#btnconectar');[m
+ [m
+[31m-		[m
+[32m+[m		[32msocket.on('leermensajes',function(datos){[m
+[32m+[m		[32m    for (var i = 0; i < datos.length; i++) {[m
+[32m+[m		[32m        $chatArea.append( datos[i].nombre+" - "+datos[i].mensaje+"<br/>");[m
+[32m+[m		[32m    }[m
+[32m+[m		[32m});[m
+ 	/*	$botonconectar.click(function(){[m
+ 			//socket.emit('entrar',$usuario.val());[m
+ 			socket.emit('entrar',usuario);[m
+[36m@@ -42,7 +46,7 @@[m
+ 		$boton.click(function(){[m
+ 			if ($('#privado').is(':checked')) {[m
+ 				socket.emit('privado',{mensaje:$messagebox.val(),id:$('#conectados').val(),nombreDestino:$('#conectados option:selected').text(),nombre:usuario});[m
+[31m-				$chatArea.append($usuario.val() +" - " + $messagebox.val() + "<br/>");[m
+[32m+[m				[32m$chatArea.append(usuario +" - " + $messagebox.val() + "<br/>");[m
+ 				$messagebox.val('');[m
+ 			}[m
+ 			else[m
+[1mdiff --git a/servidor.js b/servidor.js[m
+[1mindex ca5fceb..ca4233e 100644[m
+[1m--- a/servidor.js[m
+[1m+++ b/servidor.js[m
+[36m@@ -4,6 +4,7 @@[m [mvar express = require("express"),[m
+ 	io = require('socket.io').listen(server);[m
+ var conectados =[];[m
+ var nuevoConectado =[];[m
+[32m+[m[32mvar mensajes = [];[m
+ server.listen(3000);[m
+ [m
+ app.get("/",function(require,res){[m
+[36m@@ -14,13 +15,14 @@[m [mio.sockets.on('connection',function(socket){[m
+     //console.log(socket.id);[m
+ 	socket.on('send message',function(data)[m
+ 	{[m
+[32m+[m	[32m    mensajes.push({mensaje:data.mensaje,nombre:data.nombre});[m
+ 		io.sockets.emit('new message',data);[m
+ 		console.log("***"+data.nombre +" escribio: " + data.mensaje);[m
+ 	});[m
+ 	socket.on('entrar',function(usuario){[m
+ 		[m
+ 		conectados.push({user:usuario,id:socket.id});[m
+[31m-		[m
+[32m+[m		[32mio.sockets.connected[socket.id].emit('leermensajes',mensajes);[m
+ 		io.sockets.emit('listarcontactos',conectados);[m
+ 		console.log("se conecto :" + usuario + " con el id :" + socket.id );[m
+ 	});[m
+[36m@@ -36,17 +38,11 @@[m [mio.sockets.on('connection',function(socket){[m
+ 		console.log(conectados);[m
+ 		conectados = [];[m
+ 		conectados = nuevoConectado;[m
+[31m-	/*	for (var i = 0; i < conectados.length; i++) {[m
+[31m-		id = conectados[i].id ;[m
+[31m-		io.sockets.connected[id].emit('listarcontactos',conectados);[m
+[31m-		}*/[m
+ 		io.sockets.emit('listarcontactos',conectados);[m
+ 		console.log("Se desconecto: " + socket.id);[m
+ 		console.log("--Lista Final--");  [m
+ 		console.log(conectados);[m
+ 	});[m
+[31m-	/*socket.on('disconnect', function () {[m
+[31m-        console.log("client has disconnected :" + socket.id);[m
+[31m-    });*/[m
+ [m
+[31m-});[m
+\ No newline at end of file[m
+[32m+[m[32m});[m
+[41m+[m

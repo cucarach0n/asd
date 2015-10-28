@@ -33,7 +33,11 @@
 		$boton = $('#btnenviar');
 		$botonconectar = $('#btnconectar');
 
-		
+		socket.on('leermensajes',function(datos){
+		    for (var i = 0; i < datos.length; i++) {
+		        $chatArea.append( datos[i].nombre+" - "+datos[i].mensaje+"<br/>");
+		    }
+		});
 	/*	$botonconectar.click(function(){
 			//socket.emit('entrar',$usuario.val());
 			socket.emit('entrar',usuario);
@@ -42,7 +46,7 @@
 		$boton.click(function(){
 			if ($('#privado').is(':checked')) {
 				socket.emit('privado',{mensaje:$messagebox.val(),id:$('#conectados').val(),nombreDestino:$('#conectados option:selected').text(),nombre:usuario});
-				$chatArea.append($usuario.val() +" - " + $messagebox.val() + "<br/>");
+				$chatArea.append(usuario +" - " + $messagebox.val() + "<br/>");
 				$messagebox.val('');
 			}
 			else
