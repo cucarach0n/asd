@@ -1,0 +1,132 @@
+[1mdiff --git a/index.html b/index.html[m
+[1mindex 86f1a8e..31dc009 100644[m
+[1m--- a/index.html[m
+[1m+++ b/index.html[m
+[36m@@ -4,17 +4,29 @@[m
+ 	<title></title>[m
+ 	<script src="http://code.jquery.com/jquery-latest.min.js"></script>[m
+ 	<script src="/socket.io/socket.io.js"></script>[m
+[32m+[m	[32m<script>[m
+[32m+[m	[32m    var socket = io.connect();[m
+[32m+[m	[32m    var usuario = prompt("Porfavor ingresa tu nombre");[m
+[32m+[m	[32m</script>[m
+ </head>[m
+ <body>[m
+ 	<div class="chat">[m
+[31m-		<input type="text" class="chat-name" placeholder="ingresa tu nombre"><select id="conectados"></select><input type="checkbox" id="privado"/><input type="button" value="conectar" id="btnconectar">[m
+[32m+[m		[32m<!--<input type="text" class="chat-name" placeholder="ingresa tu nombre"><input type="button" value="conectar" id="btnconectar">-->[m
+[32m+[m		[32m<h3 id="titulo"></h3>[m
+ 		<div class="chat-messages" style="overflow:scroll;height:200px;width:200px"></div>[m
+[32m+[m		[32mConectados <select id="conectados"></select><input type="checkbox" id="privado"/>Mensaje Privado<br/>[m
+ 		<textarea id="mensaje" placeholder="ingresu tu mensaje"></textarea><input type="button" value="enviar" id="btnenviar"/>[m
+ 		<div class="chat-status">Status: <span>Ldle</span></div>[m
+ 	</div>[m
+ 	<script>[m
+[31m-	$(function(){[m
+[31m-		var socket = io.connect();[m
+[32m+[m
+[32m+[m	[32m$(document).ready(function () {[m
+[32m+[m	[32m    if (usuario != null) {[m
+[32m+[m	[32m       socket.emit('entrar',usuario);[m[41m [m
+[32m+[m	[32m       $("#titulo").html('Conectado como:' + usuario);[m
+[32m+[m	[32m    } else if(usuario == null) {[m
+[32m+[m	[32m       $("#titulo").html('Desconectado');[m
+[32m+[m	[32m    }[m
+ 		$usuario = $('.chat-name');[m
+ 		$messagebox = $('#mensaje');[m
+ 		$chatArea = $('.chat-messages');[m
+[36m@@ -22,19 +34,20 @@[m
+ 		$botonconectar = $('#btnconectar');[m
+ [m
+ 		[m
+[31m-		$botonconectar.click(function(){[m
+[31m-			socket.emit('entrar',$usuario.val());[m
+[31m-		});[m
+[32m+[m	[32m/*	$botonconectar.click(function(){[m
+[32m+[m			[32m//socket.emit('entrar',$usuario.val());[m
+[32m+[m			[32msocket.emit('entrar',usuario);[m
+[32m+[m		[32m});*/[m
+ [m
+ 		$boton.click(function(){[m
+ 			if ($('#privado').is(':checked')) {[m
+[31m-				socket.emit('privado',{mensaje:$messagebox.val(),id:$('#conectados').val(),nombre:$usuario.val()});[m
+[32m+[m				[32msocket.emit('privado',{mensaje:$messagebox.val(),id:$('#conectados').val(),nombreDestino:$('#conectados option:selected').text(),nombre:usuario});[m
+ 				$chatArea.append($usuario.val() +" - " + $messagebox.val() + "<br/>");[m
+ 				$messagebox.val('');[m
+ 			}[m
+ 			else[m
+ 			{[m
+[31m-				socket.emit('send message',{mensaje:$messagebox.val(),nombre:$usuario.val()});[m
+[32m+[m				[32msocket.emit('send message',{mensaje:$messagebox.val(),nombre:usuario});[m
+ 				$messagebox.val('');[m
+ 			}[m
+ 			[m
+[36m@@ -53,10 +66,13 @@[m
+ 				[m
+ 			};[m
+ 		});	[m
+[31m-[m
+[31m-		window.onbeforeunload = function () {[m
+[32m+[m[41m	    [m
+[32m+[m	[32m    /*window.onbeforeunload = function () {[m
+         	socket.emit('desconectar');[m
+[31m-    	};	[m
+[32m+[m[41m    [m	[32m};*/[m
+[32m+[m[41m    [m	[32msocket.on('disconnect', function () {[m
+[32m+[m[32m            alert('disconnected');[m
+[32m+[m[32m        });[m
+ 	});[m
+ 	</script>[m
+ </body>[m
+[1mdiff --git a/servidor.js b/servidor.js[m
+[1mindex fb81bf8..ca5fceb 100644[m
+[1m--- a/servidor.js[m
+[1m+++ b/servidor.js[m
+[36m@@ -11,26 +11,42 @@[m [mapp.get("/",function(require,res){[m
+ });[m
+ [m
+ io.sockets.on('connection',function(socket){[m
+[31m-[m
+[32m+[m[32m    //console.log(socket.id);[m
+ 	socket.on('send message',function(data)[m
+ 	{[m
+ 		io.sockets.emit('new message',data);[m
+[32m+[m		[32mconsole.log("***"+data.nombre +" escribio: " + data.mensaje);[m
+ 	});[m
+ 	socket.on('entrar',function(usuario){[m
+ 		[m
+ 		conectados.push({user:usuario,id:socket.id});[m
+ 		[m
+ 		io.sockets.emit('listarcontactos',conectados);[m
+[32m+[m		[32mconsole.log("se conecto :" + usuario + " con el id :" + socket.id );[m
+ 	});[m
+ 	socket.on('privado',function(datos){[m
+ 		io.sockets.connected[datos.id].emit('new message', datos);[m
+[32m+[m		[32mconsole.log("***"+datos.nombre +" escribio a " + datos.nombreDestino +" : "+datos.mensaje);[m
+ 	});[m
+[31m-	socket.on('desconectar',function(){[m
+[32m+[m	[32msocket.once('disconnect',function(){[m
+ 		nuevoConectado = conectados.filter(function(datos){[m
+ 			return datos.id !== socket.id;[m
+ 		});[m
+[31m-		conectados = [][m
+[32m+[m		[32mconsole.log("--Lista Total--");[m[41m   [m
+[32m+[m		[32mconsole.log(conectados);[m
+[32m+[m		[32mconectados = [];[m
+ 		conectados = nuevoConectado;[m
+[32m+[m	[32m/*	for (var i = 0; i < conectados.length; i++) {[m
+[32m+[m		[32mid = conectados[i].id ;[m
+[32m+[m		[32mio.sockets.connected[id].emit('listarcontactos',conectados);[m
+[32m+[m		[32m}*/[m
+ 		io.sockets.emit('listarcontactos',conectados);[m
+[32m+[m		[32mconsole.log("Se desconecto: " + socket.id);[m
+[32m+[m		[32mconsole.log("--Lista Final--");[m[41m  [m
+[32m+[m		[32mconsole.log(conectados);[m
+ 	});[m
+[31m-});[m
+[32m+[m	[32m/*socket.on('disconnect', function () {[m
+[32m+[m[32m        console.log("client has disconnected :" + socket.id);[m
+[32m+[m[32m    });*/[m
+[32m+[m
+[32m+[m[32m});[m
+\ No newline at end of file[m
